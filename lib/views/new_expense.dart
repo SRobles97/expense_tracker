@@ -64,113 +64,126 @@ class _NewExpenseState extends State<NewExpense> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 48, 16, 16),
-      child: Column(
-        children: <Widget>[
-          _buildTextField(
-            maxLength: 50,
-            controller: _titleController,
-            labelText: 'Título',
-            keyboardType: TextInputType.text,
-          ),
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Visibility(
-                visible: _showTitleError,
-                child: const Text(
-                  'Este campo es obligatorio',
-                  style: TextStyle(color: Colors.red),
-                )),
-          ),
-          Row(
-            children: <Widget>[
-              Expanded(
-                child: _buildTextField(
-                    controller: _amountController,
-                    prefixText: '\$',
-                    labelText: 'Monto',
-                    keyboardType: TextInputType.number),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                  child: Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: <Widget>[
-                  Column(
+    final keyboardSpace = MediaQuery.of(context).viewInsets.bottom;
+
+    return LayoutBuilder(builder: (context, constraints) {
+      final width = constraints.maxWidth;
+
+      return SizedBox(
+        height: double.infinity,
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(16, 16, 16, keyboardSpace + 16),
+            child: Column(
+              children: <Widget>[
+                if (width >= 600)
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
-                      const Text('Fecha seleccionada: '),
-                      Text(_selectedDate == null
-                          ? 'Ninguna'
-                          : '${_selectedDate!.day}/${_selectedDate!.month}/${_selectedDate!.year}'),
+                      Expanded(child: _buildTitleTextField()),
+                      const SizedBox(width: 24),
+                      Expanded(
+                        child: _buildAmountTextField(),
+                      ),
                     ],
-                  ),
-                  IconButton(
-                      onPressed: _presentDatePicker,
-                      icon: const Icon(Icons.calendar_today))
-                ],
-              ))
-            ],
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: <Widget>[
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Visibility(
-                    visible: _showAmountError,
-                    child: const Text(
-                      'El monto es obligatorio',
-                      style: TextStyle(color: Colors.red),
+                  )
+                else
+                  _buildTitleTextField(),
+                Row(
+                  children: <Widget>[
+                    if (width < 600)
+                      Expanded(
+                        child: _buildTextField(
+                            controller: _amountController,
+                            prefixText: '\$',
+                            labelText: 'Monto',
+                            keyboardType: TextInputType.number),
+                      ),
+                    if (width < 600) const SizedBox(width: 5),
+                    Expanded(
+                        child: Row(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: <Widget>[
+                        Column(
+                          children: <Widget>[
+                            const Text('Fecha seleccionada: '),
+                            Text(_selectedDate == null
+                                ? 'Ninguna'
+                                : '${_selectedDate!.day}/${_selectedDate!.month}/${_selectedDate!.year}'),
+                          ],
+                        ),
+                        IconButton(
+                            onPressed: _presentDatePicker,
+                            icon: const Icon(Icons.calendar_today))
+                      ],
                     )),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Visibility(
-                    visible: _showDateError,
-                    child: const Text(
-                      'La fecha es obligatoria',
-                      style: TextStyle(color: Colors.red),
-                    )),
-              ),
-            ],
+                    if (width >= 600)
+                      Expanded(
+                        child: _buildDropdown(),
+                      ),
+                  ],
+                ),
+                const SizedBox(
+                  height: 16,
+                ),
+                Row(
+                  children: <Widget>[
+                    if (width < 600) _buildDropdown(),
+                    const Spacer(),
+                    TextButton(
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                        },
+                        child: const Text('Cancelar')),
+                    ElevatedButton(
+                        onPressed: _submitForm, child: const Text('Guardar')),
+                  ],
+                ),
+              ],
+            ),
           ),
-          const SizedBox(
-            height: 16,
-          ),
-          Row(
-            children: <Widget>[
-              DropdownButton(
-                  value: _selectedCategory,
-                  items: Category.values.map(
-                    (category) {
-                      return DropdownMenuItem(
-                        value: category,
-                        child: Text(getLocalizedName(category)),
-                      );
-                    },
-                  ).toList(),
-                  onChanged: (value) {
-                    setState(() {
-                      if (value is Category) {
-                        _selectedCategory = value;
-                      }
-                    });
-                  }),
-              const Spacer(),
-              TextButton(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                  child: const Text('Cancelar')),
-              ElevatedButton(
-                  onPressed: _submitForm, child: const Text('Guardar')),
-            ],
-          ),
-        ],
-      ),
+        ),
+      );
+    });
+  }
+
+  Widget _buildTitleTextField() {
+    return _buildTextField(
+      maxLength: 50,
+      controller: _titleController,
+      labelText: 'Título',
+      keyboardType: TextInputType.text,
     );
+  }
+
+  Widget _buildAmountTextField() {
+    return _buildTextField(
+      controller: _amountController,
+      prefixText: '\$',
+      labelText: 'Monto',
+      keyboardType: TextInputType.number,
+    );
+  }
+
+  Widget _buildDropdown() {
+    return DropdownButton(
+        value: _selectedCategory,
+        items: Category.values.map(
+          (category) {
+            return DropdownMenuItem(
+              value: category,
+              child: Text(getLocalizedName(category)),
+            );
+          },
+        ).toList(),
+        onChanged: (value) {
+          setState(() {
+            if (value is Category) {
+              _selectedCategory = value;
+            }
+          });
+        });
   }
 
   Widget _buildTextField({
